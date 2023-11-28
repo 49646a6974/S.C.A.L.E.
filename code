@@ -1,0 +1,272 @@
+-- title:  S.C.A.L.E
+-- author: NonagonInfinity
+-- desc:   super simple game
+-- script: lua
+
+--0-239, 0,135
+--(120,68) origin-ish
+
+score=0
+best_score=0
+new_game=true
+
+function collision(x1,y1,x2,y2,r1,r2,d_bool)                --maybe put a collision circle at each corner within the bounds of the sprite? this would slow the game down...but it might be something to think about later if possible.
+    local touch=false
+    local dx=( (x1)-(x2) )        --the "+3" in these two line centers (not perfect center, but close enough) the sprite origin
+    local dy=( (y1)-(y2) )
+    local d=( (dx*dx)+(dy*dy) )
+    if d<( (r1+r2)*(r1+r2) )
+            then touch=true
+    end
+    if d_bool==nil
+            then
+            return touch
+    end
+    if d_bool==true --and touch==true
+            then 
+            return d
+    end
+end
+
+
+function dist(x1,x2,y1,y2)
+	local d = ( (x1-x2)*(x1-x2)+(y1-y2)*(y1-y2) )
+	return d
+end
+
+function range_rnd(min,max,fraction)        --only + numbers, returns a fraction
+    local num=math.random(max+1)
+    while num<min or num>max do
+            num=math.random(max+1)
+    end
+    if fraction==true then return num/100 end
+    if fraction==false then return num end
+end
+
+function sign_rnd()
+    local num=math.random(2)
+    if num==1 then return -1 else return 1 end
+end
+
+function extend_from_point(xo,yo,angle,speed)
+    local x,y
+    x=(speed*math.cos(angle))+xo
+    y=(speed*math.sin(angle))+yo
+    --Only need to return values that have changed.
+    return x,y                        --used to move objects
+end
+
+function arrow(xo,yo,r,angle)   --shows the direction the player is facing
+   local x1,x2,x3,y1,y2,y3
+    x1=(r*math.cos(angle))+xo
+    y1=(r*math.sin(angle))+yo
+    x2=(r*math.cos(angle+10))+xo
+    y2=(r*math.sin(angle+10))+yo
+    x3=(r*math.cos(angle-10))+xo
+    y3=(r*math.sin(angle-10))+yo 
+    line(x1,y1,x2,y2,5)
+    line(x1,y1,x3,y3,5)
+end
+
+function acquire_circle(r)
+    boundary_x[1]=boundary_x[1]-(r)
+    boundary_x[2]=boundary_x[2]+(r)
+
+    boundary_y[1]=boundary_y[1]-(r)
+    boundary_y[2]=boundary_y[2]+(r)
+
+    if boundary_x[1]<boundary_xo[1] then boundary_x[1] = boundary_xo[1] end
+    if boundary_x[2]>boundary_xo[2] then boundary_x[2] = boundary_xo[2] end
+
+    if boundary_y[1]<boundary_yo[1] then boundary_y[1] = boundary_yo[1] end
+    if boundary_y[2]>boundary_yo[2] then boundary_y[2] = boundary_yo[2] end
+end
+
+function circle_square(xo,yo,r)
+
+    x0=((r-1)*cos_fourtyfive)+xo
+    y0=((r-1)*sin_fourtyfive)+yo
+
+    x1=((r-1)*cos_onethreefive)+xo
+    y1=((r-1)*sin_onethreefive)+yo
+
+    x2=((r-1)*cos_twotwofive)+xo
+    y2=((r-1)*sin_twotwofive)+yo
+
+    x3=((r-1)*cos_threeonefive)+xo
+    y3=((r-1)*sin_threeonefive)+yo
+
+    x4=((r-1)*cos_threeonefive)+xo
+    y4=((r-1)*sin_threeonefive)+yo
+
+    circb(xo,yo,r,math.floor(math.random(11)))
+    line(x0,y0,x1,y1,math.floor(math.random(11)))
+    line(x1,y1,x2,y2,math.floor(math.random(11)))
+    line(x2,y2,x3,y3,math.floor(math.random(11)))
+    line(x3,y3,x0,y0,math.floor(math.random(11)))
+end
+
+function player_actions()        --udlr        0123     --0-239, 0,135  +5,-5
+    if btnp(4)                                            
+    then
+        print("bitch")
+    	player_angle[1] = player_angle[1]-3.14159 
+        extend_from_point(player_x[1],player_y[1],player_angle[1],player_speed[1])
+    end
+
+    if player_x[1]<boundary_x[1] or player_x[1]>boundary_x[2] or player_y[1]<boundary_y[1] or player_y[1]>boundary_y[2]
+        then
+            init()
+            if score>best_score then best_score=score score=0 end
+        end
+
+    if btn(0) or btn(0) and btn(2) or  btn(0) and btn(3) then player_x[1],player_y[1]=extend_from_point(player_x[1],player_y[1],player_angle[1],player_speed[1]) end
+    if btnp(1) then player_angle[1]=player_angle[1]+3.14159 end
+    if player_angle[1]>6.28318 then player_angle[1]=player_angle[1]-6.28318 end
+    if player_angle[1]<-6.28318 then player_angle[1]=player_angle[1]+6.28318 end
+    if btn(2) or btn(2) and btn(0) then player_angle[1]=player_angle[1]-player_angle_dr[1] end
+    if btn(3) or btn(3) and btn(0) then player_angle[1]=player_angle[1]+player_angle_dr[1] end
+end
+
+
+function init()
+    cls()
+    colors={1,2,3,4,5,6,7,8,9,10,11}
+    player_s={5}
+    player_x={120}
+    player_y={68}
+    player_angle={math.pi}
+    player_angle_dr={0.1}
+    player_r={5}
+    player_speed={1}
+    player_status={"normal"}
+
+                    --120-,68
+    boundary_xo={0+5,239-5}
+    boundary_yo={0+5,135-5}
+    boundary_x={0+5,239-5}
+    boundary_y={0+5,135-5}
+    boundary_dxy={0.05}
+    boundary_color={5}
+
+    ellipse_x={}
+    ellipse_y={}
+    ellipse_r={}    --size
+    ellipse_speed={}       --speed
+    ellipse_color={}
+    ellipse_angle={}
+
+    circle_square_x={}
+    circle_square_y={}
+    circle_square_r={}      --no color since defined as rnd
+    circle_square_speed={}
+    circle_square_angle={}
+
+    cos_fourtyfive=math.cos(math.pi/4)
+    sin_fourtyfive=math.sin(math.pi/4)
+
+    cos_onethreefive=math.cos((math.pi/4)*3)
+    sin_onethreefive=math.sin((math.pi/4)*3)
+
+    cos_twotwofive=math.cos((math.pi/4)*5)
+    sin_twotwofive=math.sin((math.pi/4)*5)
+
+    cos_threeonefive=math.cos((math.pi/4)*7)
+    sin_threeonefive=math.sin((math.pi/4)*7)
+
+end
+
+init()
+
+
+function TIC()
+    cls()
+    if new_game==true
+        then
+        if btn(5) then new_game=false end
+        print("S.C.A.L.E.",0,0,3)
+        print("Super Cirle Acquiring Lesser Ellipses",0,8,3)
+        print("Press x to start.",0,8*2,6)
+        print("NonagonInfinity 2023 :p",0,8*3,11)
+        circle_square(30,55,10) print("<-avoid",50,55,9)
+        rectb(40,70,15,15,5) print("<-stay inside",67,75,10)
+        circ(75,105,10,2) print("<-collect",100,104,4)
+        circb(112,40,5,2) arrow(112,40,5,0) print("^-you aka Super Circle",110,50,11)
+        print("^ forward",160,67,11)
+        print("< > turn",165,75,11)
+        print("v 180",165,83,11)
+        else
+                    --if btnp(5) then init() end
+        circb(player_x[1],player_y[1],player_r[1],3)
+        arrow(player_x[1],player_y[1],player_r[1],player_angle[1])
+            player_actions()
+        
+        boundary_x[1]=boundary_x[1]+boundary_dxy[1]
+        boundary_x[2]=boundary_x[2]-boundary_dxy[1]
+        boundary_y[1]=boundary_y[1]+boundary_dxy[1]
+        boundary_y[2]=boundary_y[2]-boundary_dxy[1]
+        
+        line(boundary_x[1],boundary_y[1],boundary_x[2],boundary_y[1],boundary_color[1])
+        line(boundary_x[1],boundary_y[2],boundary_x[2],boundary_y[2],boundary_color[1])
+
+        line(boundary_x[1],boundary_y[1],boundary_x[1],boundary_y[2],boundary_color[1])
+        line(boundary_x[2],boundary_y[1],boundary_x[2],boundary_y[2],boundary_color[1])
+    
+            print("SCORE:",0,0,11)
+            print(score,34,0,11)
+            print("BEST SCORE:",0,130,11)
+            print(best_score,61,130,11)
+
+        --summon ellipses
+        while #ellipse_x<10 do
+            local side=math.floor(math.random(4)) --1,2,3,4 = lrud
+            if side == 1 then table.insert(ellipse_x,0)     table.insert(ellipse_y,math.random(135))    table.insert(ellipse_angle,((math.random()*(math.pi/6))*sign_rnd()) + 0)      end   --              --table.insert(ellipse_x,math.random(240))
+            if side == 2 then table.insert(ellipse_x,240)   table.insert(ellipse_y,math.random(135))    table.insert(ellipse_angle,(math.random()*(math.pi/6))*sign_rnd() + math.pi)  end
+            if side == 3 then table.insert(ellipse_x,math.random(240))     table.insert(ellipse_y,0)    table.insert(ellipse_angle,(math.random()*(math.pi/6))*sign_rnd() + (math.pi/2))          end
+            if side == 4 then table.insert(ellipse_x,math.random(240))     table.insert(ellipse_y,135)  table.insert(ellipse_angle,(math.random()*(math.pi/6))*sign_rnd() + ((3*math.pi)/2))                end
+            table.insert(ellipse_color,math.floor(math.random(11)))
+            table.insert(ellipse_r,math.random(8)+3)
+            table.insert(ellipse_speed,((math.random())*0.5)+0.1)
+        end
+        --local temp=#ellipse_x
+        for i=#ellipse_x,1,-1 do
+            ellipse_x[i],ellipse_y[i] = extend_from_point(ellipse_x[i],ellipse_y[i],ellipse_angle[i],ellipse_speed[i])
+            if collision(player_x[1],player_y[1],ellipse_x[i],ellipse_y[i],player_r[1],ellipse_r[i]) == true then ellipse_x[i] = -11 acquire_circle(ellipse_r[i]) score=score+ellipse_r[i] end
+            circ(ellipse_x[i],ellipse_y[i],ellipse_r[i],ellipse_color[i])
+            if ellipse_x[i]>240+10 or ellipse_x[i]<0-10 or ellipse_y[i]>135+10 or ellipse_y[i]<0-10
+                then
+                table.remove(ellipse_x,i)
+                table.remove(ellipse_y,i)
+                table.remove(ellipse_r,i)
+                table.remove(ellipse_speed,i)
+                table.remove(ellipse_color,i)
+                table.remove(ellipse_angle,i)
+            end
+        end
+
+        while #circle_square_x<10 do
+            local side=math.floor(math.random(4)) --1,2,3,4 = lrud
+            if side == 1 then table.insert(circle_square_x,0)     table.insert(circle_square_y,math.random(135))    table.insert(circle_square_angle,((math.random()*(math.pi/6))*sign_rnd()) + 0)      end   --              --table.insert(circle_square_x,math.random(240))
+            if side == 2 then table.insert(circle_square_x,240)   table.insert(circle_square_y,math.random(135))    table.insert(circle_square_angle,(math.random()*(math.pi/6))*sign_rnd() + math.pi)  end
+            if side == 3 then table.insert(circle_square_x,math.random(240))     table.insert(circle_square_y,0)    table.insert(circle_square_angle,(math.random()*(math.pi/6))*sign_rnd() + (math.pi/2))          end
+            if side == 4 then table.insert(circle_square_x,math.random(240))     table.insert(circle_square_y,135)  table.insert(circle_square_angle,(math.random()*(math.pi/6))*sign_rnd() + ((3*math.pi)/2))                end
+            table.insert(circle_square_r,math.random(8)+3)
+            table.insert(circle_square_speed,((math.random())*0.5)+0.1)
+        end
+        --local temp=#circle_square_x
+        for i=#circle_square_x,1,-1 do
+            circle_square_x[i],circle_square_y[i] = extend_from_point(circle_square_x[i],circle_square_y[i],circle_square_angle[i],circle_square_speed[i])
+            if collision(player_x[1],player_y[1],circle_square_x[i],circle_square_y[i],player_r[1],circle_square_r[i]) == true then circle_square_x[i] = -11 acquire_circle(-circle_square_r[i]) score=score-circle_square_r[i] end
+            circle_square(circle_square_x[i],circle_square_y[i],circle_square_r[i])     ---this
+            if circle_square_x[i]>240+10 or circle_square_x[i]<0-10 or circle_square_y[i]>135+10 or circle_square_y[i]<0-10
+                then
+                table.remove(circle_square_x,i)
+                table.remove(circle_square_y,i)
+                table.remove(circle_square_r,i)
+                table.remove(circle_square_speed,i)
+                table.remove(circle_square_angle,i)
+            end
+        end
+    end
+end
+
